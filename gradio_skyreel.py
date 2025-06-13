@@ -52,40 +52,56 @@ def get_resolution_info(resolution: str) -> Tuple[int, int]:
 def load_model(model_type: str, model_id: str, offload: bool = True) -> object:
     """Load and cache models."""
     global loaded_models
-    
+
     cache_key = f"{model_type}_{model_id}_{offload}"
     if cache_key in loaded_models:
+        print(f"Using cached model: {model_id}")
         return loaded_models[cache_key]
-    
-    print(f"Loading model: {model_id}")
-    model_path = download_model(model_id)
-    
-    if model_type == "T2V":
-        pipeline = Text2VideoPipeline(
-            model_path=model_path, 
-            dit_path=model_path, 
-            use_usp=False, 
-            offload=offload
-        )
-    elif model_type == "I2V":
-        pipeline = Image2VideoPipeline(
-            model_path=model_path, 
-            dit_path=model_path, 
-            use_usp=False, 
-            offload=offload
-        )
-    elif model_type == "DF":
-        pipeline = DiffusionForcingPipeline(
-            model_path=model_path, 
-            dit_path=model_path, 
-            use_usp=False, 
-            offload=offload
-        )
-    else:
-        raise ValueError(f"Unknown model type: {model_type}")
-    
-    loaded_models[cache_key] = pipeline
-    return pipeline
+
+    try:
+        print(f"Loading model: {model_id}")
+        print(f"Model type: {model_type}, Offload: {offload}")
+
+        # Download model
+        model_path = download_model(model_id)
+        print(f"Model downloaded to: {model_path}")
+
+        # Create pipeline based on type
+        if model_type == "T2V":
+            print("Creating Text2VideoPipeline...")
+            pipeline = Text2VideoPipeline(
+                model_path=model_path,
+                dit_path=model_path,
+                use_usp=False,
+                offload=offload
+            )
+        elif model_type == "I2V":
+            print("Creating Image2VideoPipeline...")
+            pipeline = Image2VideoPipeline(
+                model_path=model_path,
+                dit_path=model_path,
+                use_usp=False,
+                offload=offload
+            )
+        elif model_type == "DF":
+            print("Creating DiffusionForcingPipeline...")
+            pipeline = DiffusionForcingPipeline(
+                model_path=model_path,
+                dit_path=model_path,
+                use_usp=False,
+                offload=offload
+            )
+        else:
+            raise ValueError(f"Unknown model type: {model_type}")
+
+        print(f"Pipeline created successfully: {type(pipeline).__name__}")
+        loaded_models[cache_key] = pipeline
+        return pipeline
+
+    except Exception as e:
+        error_msg = f"Failed to load model {model_id}: {str(e)}"
+        print(error_msg)
+        raise RuntimeError(error_msg) from e
 
 def get_prompt_enhancer():
     """Load and cache prompt enhancer."""
@@ -144,7 +160,7 @@ def generate_text_to_video(
         generator = torch.Generator(device="cuda").manual_seed(seed)
         
         # Generate video
-        video_frames = pipeline(
+        result = pipeline(
             prompt=enhanced_prompt,
             height=height,
             width=width,
@@ -153,10 +169,22 @@ def generate_text_to_video(
             guidance_scale=guidance_scale,
             shift=shift,
             generator=generator,
-        )[0]
-        
+        )
+
+        # Check if result is valid
+        if result is None:
+            raise ValueError("Pipeline returned None - check model loading and parameters")
+
+        if isinstance(result, (list, tuple)) and len(result) > 0:
+            video_frames = result[0]
+        else:
+            video_frames = result
+
+        if video_frames is None:
+            raise ValueError("Video frames are None - generation may have failed")
+
         progress(0.9, desc="Saving video...")
-        
+
         # Save video
         output_path = f"output_t2v_{int(time.time())}.mp4"
         imageio.mimsave(output_path, video_frames, fps=fps)
@@ -226,7 +254,7 @@ def generate_image_to_video(
         generator = torch.Generator(device="cuda").manual_seed(seed)
         
         # Generate video
-        video_frames = pipeline(
+        result = pipeline(
             image=processed_image,
             prompt=enhanced_prompt,
             height=height,
@@ -236,10 +264,22 @@ def generate_image_to_video(
             guidance_scale=guidance_scale,
             shift=shift,
             generator=generator,
-        )[0]
-        
+        )
+
+        # Check if result is valid
+        if result is None:
+            raise ValueError("Pipeline returned None - check model loading and parameters")
+
+        if isinstance(result, (list, tuple)) and len(result) > 0:
+            video_frames = result[0]
+        else:
+            video_frames = result
+
+        if video_frames is None:
+            raise ValueError("Video frames are None - generation may have failed")
+
         progress(0.9, desc="Saving video...")
-        
+
         # Save video
         output_path = f"output_i2v_{int(time.time())}.mp4"
         imageio.mimsave(output_path, video_frames, fps=fps)
@@ -329,7 +369,7 @@ def generate_diffusion_forcing_video(
         # Generate video based on mode
         if video_path and os.path.exists(video_path):
             # Video extension mode
-            video_frames = pipeline.extend_video(
+            result = pipeline.extend_video(
                 prompt=enhanced_prompt,
                 negative_prompt="色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
                 prefix_video_path=video_path,
@@ -346,10 +386,10 @@ def generate_diffusion_forcing_video(
                 ar_step=ar_step,
                 causal_block_size=causal_block_size,
                 fps=fps,
-            )[0]
+            )
         else:
             # Regular generation or start/end frame control
-            video_frames = pipeline(
+            result = pipeline(
                 prompt=enhanced_prompt,
                 negative_prompt="色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
                 image=processed_image,
@@ -367,7 +407,19 @@ def generate_diffusion_forcing_video(
                 ar_step=ar_step,
                 causal_block_size=causal_block_size,
                 fps=fps,
-            )[0]
+            )
+
+        # Check if result is valid
+        if result is None:
+            raise ValueError("Pipeline returned None - check model loading and parameters")
+
+        if isinstance(result, (list, tuple)) and len(result) > 0:
+            video_frames = result[0]
+        else:
+            video_frames = result
+
+        if video_frames is None:
+            raise ValueError("Video frames are None - generation may have failed")
 
         progress(0.9, desc="Saving video...")
 
@@ -592,32 +644,27 @@ def create_gradio_interface():
                         with gr.Accordion("⚙️ Diffusion Forcing Settings", open=True):
                             with gr.Row():
                                 df_ar_step = gr.Slider(
-                                    label="AR Step (0=Sync, >0=Async)",
-                                    minimum=0, maximum=10, value=0, step=1,
-                                    info="0 for synchronous, 5+ for asynchronous generation"
+                                    label="AR Step (0=Sync, >0=Async) - 0 for synchronous, 5+ for asynchronous generation",
+                                    minimum=0, maximum=10, value=0, step=1
                                 )
                                 df_base_frames = gr.Slider(
-                                    label="Base Frames",
-                                    minimum=25, maximum=200, value=97, step=1,
-                                    info="Base frame count (97 for 540P, 121 for 720P)"
+                                    label="Base Frames - Base frame count (97 for 540P, 121 for 720P)",
+                                    minimum=25, maximum=200, value=97, step=1
                                 )
 
                             with gr.Row():
                                 df_overlap = gr.Slider(
-                                    label="Overlap History",
-                                    minimum=0, maximum=50, value=17, step=1,
-                                    info="Frames to overlap for smooth transitions (17 recommended)"
+                                    label="Overlap History - Frames to overlap for smooth transitions (17 recommended)",
+                                    minimum=0, maximum=50, value=17, step=1
                                 )
                                 df_addnoise = gr.Slider(
-                                    label="Add Noise Condition",
-                                    minimum=0, maximum=60, value=20, step=1,
-                                    info="Improves consistency (20 recommended)"
+                                    label="Add Noise Condition - Improves consistency (20 recommended)",
+                                    minimum=0, maximum=60, value=20, step=1
                                 )
 
                             df_causal_block = gr.Slider(
-                                label="Causal Block Size",
-                                minimum=1, maximum=10, value=5, step=1,
-                                info="Used with async generation (ar_step > 0)"
+                                label="Causal Block Size - Used with async generation (ar_step > 0)",
+                                minimum=1, maximum=10, value=5, step=1
                             )
 
                         with gr.Accordion("🎬 Advanced Controls", open=False):
