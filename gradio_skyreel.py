@@ -632,9 +632,8 @@ def create_gradio_interface():
                                 height=200
                             )
                             df_video_path = gr.File(
-                                label="Video to Extend (optional)",
-                                file_types=[".mp4", ".avi", ".mov"],
-                                info="Upload a video to extend it"
+                                label="Video to Extend (optional) - Upload a video to extend it",
+                                file_types=[".mp4", ".avi", ".mov"]
                             )
 
                         df_offload = gr.Checkbox(label="CPU Offload (saves GPU memory)", value=True)
