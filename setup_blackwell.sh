@@ -76,9 +76,32 @@ if torch.cuda.is_available():
         print(f'GPU {i}: {gpu_name} (Compute Capability: {compute_capability[0]}.{compute_capability[1]})')
 "
 
-# Install other dependencies
+# Install other dependencies in correct order
 echo "📚 Installing SkyReels V2 dependencies..."
-pip install -r requirements.txt
+
+# First, install dependencies that don't require special compilation
+echo "🔧 Installing basic dependencies..."
+pip install opencv-python==4.10.0.84 \
+           diffusers>=0.31.0 \
+           transformers==4.49.0 \
+           tokenizers==0.21.1 \
+           accelerate==1.6.0 \
+           tqdm \
+           imageio \
+           easydict \
+           ftfy \
+           dashscope \
+           imageio-ffmpeg \
+           "numpy>=1.23.5,<2"
+
+# Install flash_attn separately after PyTorch is confirmed working
+echo "⚡ Installing flash_attn (this may take several minutes)..."
+echo "Note: flash_attn requires compilation and may take 5-10 minutes to build..."
+pip install flash_attn --no-build-isolation
+
+# Install xfuser last as it may have specific requirements
+echo "🚀 Installing xfuser..."
+pip install xfuser
 
 # Install Gradio and additional dependencies
 echo "🌐 Installing Gradio and web interface dependencies..."
