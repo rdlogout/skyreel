@@ -1,3 +1,7 @@
+# Core Gradio and web interface
+gradio==4.44.0
+
+# Include all SkyReels-V2 dependencies
 torch==2.5.1
 torchvision==0.20.1
 opencv-python==4.10.0.84
@@ -14,3 +18,9 @@ imageio-ffmpeg
 flash_attn
 numpy>=1.23.5,<2
 xfuser
+
+# Additional dependencies for web interface
+pillow
+moviepy
+tempfile-helper
+typing-extensions 

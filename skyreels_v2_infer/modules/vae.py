@@ -1,5 +1,6 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
 import logging
+import pickle
 
 import torch
 import torch.nn as nn
@@ -563,7 +564,13 @@ def _video_vae(pretrained_path=None, z_dim=None, device="cpu", **kwargs):
 
     # load checkpoint
     logging.info(f"loading {pretrained_path}")
-    model.load_state_dict(torch.load(pretrained_path, map_location=device, weights_only=False), assign=True)
+    # Use weights_only=True for security, but fallback to False for compatibility with older checkpoints
+    try:
+        checkpoint = torch.load(pretrained_path, map_location=device, weights_only=True)
+    except (TypeError, pickle.UnpicklingError):
+        # Fallback for older checkpoints that contain custom objects
+        checkpoint = torch.load(pretrained_path, map_location=device, weights_only=False)
+    model.load_state_dict(checkpoint, assign=True)
 
     return model
 
@@ -629,26 +636,9 @@ class WanVAE:
         return self.vae.encode(video, self.scale).float()
 
     def to(self, *args, **kwargs):
-        # Handle Blackwell GPU compatibility by computing reciprocal on CPU first
-        try:
-            self.mean = self.mean.to(*args, **kwargs)
-            self.std = self.std.to(*args, **kwargs)
-            # Compute reciprocal on CPU to avoid CUDA kernel issues with Blackwell
-            std_reciprocal = (1.0 / self.std.cpu()).to(*args, **kwargs)
-            self.scale = [self.mean, std_reciprocal]
-        except RuntimeError as e:
-            if "no kernel image is available for execution on the device" in str(e):
-                # Fallback for Blackwell GPU compatibility
-                print("Warning: CUDA kernel compatibility issue detected. Using CPU fallback for tensor operations.")
-                self.mean = self.mean.to(*args, **kwargs)
-                self.std = self.std.to(*args, **kwargs)
-                # Compute on CPU then move to device
-                std_reciprocal = 1.0 / self.std.cpu()
-                std_reciprocal = std_reciprocal.to(*args, **kwargs)
-                self.scale = [self.mean, std_reciprocal]
-            else:
-                raise e
-
+        self.mean = self.mean.to(*args, **kwargs)
+        self.std = self.std.to(*args, **kwargs)
+        self.scale = [self.mean, 1.0 / self.std]
         self.vae = self.vae.to(*args, **kwargs)
         return self
 
