@@ -1,20 +1,40 @@
+# PyTorch with CUDA 12.1 support for RTX 6000 Blackwell
 torch>=2.1.0
 torchvision>=0.16.0
+torchaudio>=2.1.0
+
+# Core dependencies
 opencv-python==4.10.0.84
 diffusers>=0.31.0
 transformers==4.49.0
 tokenizers==0.21.1
 accelerate==1.6.0
-tqdm
+numpy>=1.23.5,<2
+
+# Video processing
+decord>=0.6.0
 imageio
+imageio-ffmpeg
+moviepy
+
+# ML utilities
+tqdm
 easydict
 ftfy
-dashscope
-imageio-ffmpeg
-flash_attn
-numpy>=1.23.5,<2
-xfuser
-gradio>=4.0.0
-moviepy
 safetensors
 huggingface_hub
+
+# Flash attention and performance
+flash_attn
+ninja
+packaging
+
+# Multi-GPU support
+xfuser
+
+# Web interface
+gradio>=4.0.0
+
+# Additional dependencies
+psutil
+dashscope

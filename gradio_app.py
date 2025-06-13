@@ -12,6 +12,10 @@ import time
 import tempfile
 from typing import Optional, Tuple, List
 
+# Set environment variables for RTX 6000 Blackwell compatibility
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
+os.environ['TORCH_CUDA_ARCH_LIST'] = '5.0;6.0;7.0;7.5;8.0;8.6;9.0;12.0'
+
 import gradio as gr
 import imageio
 import torch

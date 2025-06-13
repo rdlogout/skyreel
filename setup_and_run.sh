@@ -76,46 +76,62 @@ check_gpu() {
 # Function to install system dependencies
 install_system_deps() {
     print_status "Installing system dependencies..."
-    
+
     if [ "$JUPYTER_ENV" = "colab" ] || [ "$JUPYTER_ENV" = "kaggle" ]; then
         # Colab/Kaggle usually have most dependencies
-        apt-get update -qq
-        apt-get install -y -qq ffmpeg libsm6 libxext6 libxrender-dev libglib2.0-0 libgl1-mesa-glx
+        apt-get update -qq 2>/dev/null || true
+        apt-get install -y -qq ffmpeg libsm6 libxext6 libxrender-dev libglib2.0-0 libgl1-mesa-glx 2>/dev/null || true
     else
-        # Standard Linux environment
+        # Check if we need sudo or if we already have admin privileges
         if command -v apt-get &> /dev/null; then
-            sudo apt-get update -qq
-            sudo apt-get install -y -qq python3-pip ffmpeg libsm6 libxext6 libxrender-dev libglib2.0-0 libgl1-mesa-glx
+            if [ "$EUID" -eq 0 ] || [ -w /usr/bin ]; then
+                # We have admin privileges, no sudo needed
+                apt-get update -qq 2>/dev/null || true
+                apt-get install -y -qq python3-pip ffmpeg libsm6 libxext6 libxrender-dev libglib2.0-0 libgl1-mesa-glx 2>/dev/null || true
+            elif command -v sudo &> /dev/null; then
+                # Use sudo if available
+                sudo apt-get update -qq 2>/dev/null || true
+                sudo apt-get install -y -qq python3-pip ffmpeg libsm6 libxext6 libxrender-dev libglib2.0-0 libgl1-mesa-glx 2>/dev/null || true
+            else
+                print_warning "Cannot install system dependencies (no sudo available). Continuing anyway..."
+            fi
         elif command -v yum &> /dev/null; then
-            sudo yum install -y python3-pip ffmpeg
+            if command -v sudo &> /dev/null; then
+                sudo yum install -y python3-pip ffmpeg 2>/dev/null || true
+            else
+                yum install -y python3-pip ffmpeg 2>/dev/null || true
+            fi
+        else
+            print_warning "Package manager not found. Skipping system dependencies..."
         fi
     fi
-    
-    print_success "System dependencies installed"
+
+    print_success "System dependencies installation completed"
 }
 
 # Function to install Python dependencies
 install_python_deps() {
     print_status "Installing Python dependencies..."
-    
+
     # Upgrade pip first
-    pip install --upgrade pip setuptools wheel
-    
+    python3 -m pip install --upgrade pip setuptools wheel --quiet
+
     # Install PyTorch with CUDA support if GPU is available
     if [ "$GPU_AVAILABLE" = true ]; then
         print_status "Installing PyTorch with CUDA support..."
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+        python3 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 --quiet
     else
         print_status "Installing PyTorch CPU version..."
-        pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+        python3 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu --quiet
     fi
-    
+
     # Install other requirements
-    pip install -r requirements.txt
-    
+    print_status "Installing other Python packages..."
+    python3 -m pip install -r requirements.txt --quiet
+
     # Install additional dependencies that might be missing
-    pip install ninja packaging psutil
-    
+    python3 -m pip install ninja packaging psutil decord --quiet
+
     print_success "Python dependencies installed"
 }
 
