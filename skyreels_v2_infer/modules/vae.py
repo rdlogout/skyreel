@@ -1,6 +1,5 @@
 # Copyright 2024-2025 The Alibaba Wan Team Authors. All rights reserved.
 import logging
-import pickle
 
 import torch
 import torch.nn as nn
@@ -564,13 +563,7 @@ def _video_vae(pretrained_path=None, z_dim=None, device="cpu", **kwargs):
 
     # load checkpoint
     logging.info(f"loading {pretrained_path}")
-    # Use weights_only=True for security, but fallback to False for compatibility with older checkpoints
-    try:
-        checkpoint = torch.load(pretrained_path, map_location=device, weights_only=True)
-    except (TypeError, pickle.UnpicklingError):
-        # Fallback for older checkpoints that contain custom objects
-        checkpoint = torch.load(pretrained_path, map_location=device, weights_only=False)
-    model.load_state_dict(checkpoint, assign=True)
+    model.load_state_dict(torch.load(pretrained_path, map_location=device), assign=True)
 
     return model
 

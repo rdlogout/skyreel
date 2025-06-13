@@ -1,190 +1,215 @@
-# SkyReels V2 Gradio Web Interface
+# 🎬 SkyReels V2 Gradio Web Interface
 
-This Gradio web application provides a user-friendly interface to access all features of SkyReels V2 through your web browser with public link sharing enabled.
+A comprehensive web interface for SkyReels V2 video generation models, built with Gradio. This interface exposes all the powerful features of SkyReels V2 through an easy-to-use web UI.
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Automatic Setup and Launch
 
-1. **GPU Requirements**: CUDA-compatible GPU with at least 16GB VRAM (24GB+ recommended for larger models)
-2. **Python**: Python 3.10 or higher
-3. **CUDA**: CUDA toolkit installed and properly configured
-
-### Installation
-
-1. **Clone the repository**:
+The easiest way to get started is using the provided setup script:
 
 ```bash
-git clone https://github.com/SkyworkAI/SkyReels-V2
-cd SkyReels-V2
+# Make the script executable (if not already)
+chmod +x setup_and_run.sh
+
+# Run the setup and launch script
+./setup_and_run.sh
 ```
 
-2. **Install dependencies**:
+This script will:
+- ✅ Check your environment (GPU, Python, etc.)
+- 📦 Install system dependencies
+- 🐍 Set up Python environment
+- 📚 Install all required packages
+- 🧪 Verify the installation
+- 🚀 Launch the Gradio interface with sharing enabled
+
+### Manual Setup
+
+If you prefer manual setup:
 
 ```bash
-# Install base SkyReels-V2 dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# Install additional Gradio dependencies
-pip install -r gradio_requirements.txt
+# Test the installation
+python test_gradio.py
+
+# Launch the interface
+python gradio_skyreel.py --share
 ```
 
-3. **Launch the Gradio app**:
+## 🎯 Features
+
+### 📝 Text-to-Video (T2V)
+Generate videos from text descriptions using state-of-the-art T2V models.
+
+**Available Models:**
+- `Skywork/SkyReels-V2-T2V-14B-540P` (540P resolution)
+- `Skywork/SkyReels-V2-T2V-14B-720P` (720P resolution)
+
+**Key Parameters:**
+- **Prompt**: Detailed text description
+- **Frames**: 25-300 frames (97 for 540P, 121 for 720P recommended)
+- **FPS**: 8-30 frames per second
+- **Guidance Scale**: 6.0 recommended for T2V
+- **Shift**: 8.0 recommended for T2V
+
+### 🖼️ Image-to-Video (I2V)
+Animate images with text prompts to create dynamic videos.
+
+**Available Models:**
+- `Skywork/SkyReels-V2-I2V-1.3B-540P` (540P, lightweight)
+- `Skywork/SkyReels-V2-I2V-14B-540P` (540P, high quality)
+- `Skywork/SkyReels-V2-I2V-14B-720P` (720P, high quality)
+
+**Key Parameters:**
+- **Input Image**: Upload your source image
+- **Prompt**: Describe the desired animation
+- **Guidance Scale**: 5.0 recommended for I2V
+- **Shift**: 3.0 recommended for I2V
+
+### 🎯 Diffusion Forcing (DF)
+Advanced video generation with long video support, video extension, and frame control.
+
+**Available Models:**
+- `Skywork/SkyReels-V2-DF-1.3B-540P` (540P, lightweight)
+- `Skywork/SkyReels-V2-DF-14B-540P` (540P, high quality)
+- `Skywork/SkyReels-V2-DF-14B-720P` (720P, high quality)
+
+**Advanced Features:**
+- **Long Video Generation**: Create videos up to 30+ seconds
+- **Video Extension**: Extend existing videos
+- **Frame Control**: Control start and end frames
+- **Sync/Async Modes**: Choose generation strategy
+
+**Key Parameters:**
+- **AR Step**: 0 for synchronous (10s videos), 5+ for asynchronous (30s+ videos)
+- **Base Frames**: 97 for 540P, 121 for 720P
+- **Overlap History**: 17 recommended for smooth transitions
+- **Add Noise Condition**: 20 recommended for consistency
+
+## 💡 Tips for Best Results
+
+### Text-to-Video Tips
+- Use detailed, descriptive prompts
+- Mention camera movements, lighting, and atmosphere
+- Example: "A majestic eagle soaring through mountain peaks at golden hour with cinematic camera movement"
+
+### Image-to-Video Tips
+- Use high-quality input images (preferably 1024x1024 or higher)
+- Describe the desired motion clearly
+- Portrait images work well for character animation
+- Example: "The person in the image turns their head slowly and smiles"
+
+### Diffusion Forcing Tips
+- **For 10-second videos**: Use synchronous mode (ar_step=0)
+- **For 30+ second videos**: Use asynchronous mode (ar_step=5)
+- Set overlap_history=17 for smooth long videos
+- Use addnoise_condition=20 for better consistency
+- Base frames should match your model: 97 for 540P, 121 for 720P
+
+## 🔧 Configuration Options
+
+### Command Line Arguments
 
 ```bash
-python app.py
+python gradio_skyreel.py [OPTIONS]
+
+Options:
+  --share              Enable Gradio sharing (creates public URL)
+  --server_name HOST   Server hostname (default: 0.0.0.0)
+  --server_port PORT   Server port (default: 7860)
+  --debug              Enable debug mode
 ```
 
-The app will start on `http://localhost:7860` and automatically generate a public shareable link that you can access from anywhere.
+### Setup Script Options
 
-## 🎬 Features
+```bash
+./setup_and_run.sh [OPTIONS]
 
-### 📝 Text-to-Video Generation
+Options:
+  --skip-deps     Skip Python dependency installation
+  --skip-system   Skip system dependency installation
+  --help, -h      Show help message
+```
 
-- Generate videos directly from text descriptions
-- Multiple model options (1.3B, 14B parameters)
-- Resolution options: 540P, 720P
-- Customizable parameters: frames, guidance scale, inference steps
-- Optional prompt enhancement for better results
+## 📊 Model Specifications
 
-### 🖼️ Image-to-Video Generation
+| Model Type | Resolution | Recommended Frames | Guidance | Shift | Use Case |
+|------------|------------|-------------------|----------|-------|----------|
+| T2V-14B-540P | 960x544 | 97 | 6.0 | 8.0 | Text-to-video |
+| T2V-14B-720P | 1280x720 | 121 | 6.0 | 8.0 | High-res text-to-video |
+| I2V-14B-540P | 960x544 | 97 | 5.0 | 3.0 | Image animation |
+| I2V-14B-720P | 1280x720 | 121 | 5.0 | 3.0 | High-res image animation |
+| DF-14B-540P | 960x544 | 97+ | 6.0 | 8.0 | Long videos, extensions |
+| DF-14B-720P | 1280x720 | 121+ | 6.0 | 8.0 | High-res long videos |
 
-- Animate static images with text prompts
-- Upload any image and describe desired motion
-- Automatic image preprocessing and aspect ratio handling
-- Same quality controls as text-to-video
-
-### 🔄 Diffusion Forcing (Long Video Generation)
-
-- Generate very long videos (up to infinite length theoretically)
-- AutoRegressive approach for seamless continuity
-- Optional start and end frame control
-- Advanced parameters for controlling generation flow
-
-### ➕ Video Extension
-
-- Extend existing videos with new content
-- Upload a video and describe how to continue it
-- Maintains consistency with original content
-- Perfect for creating longer sequences
-
-### 💬 Video Captioning
-
-- Generate detailed captions for videos using SkyCaptioner-V1
-- Structural analysis including shot types, camera movements
-- Professional film terminology and descriptions
-
-## ⚙️ Configuration Options
-
-### Model Selection
-
-- **1.3B Models**: Faster, lower memory usage, good quality
-- **14B Models**: Best quality, higher memory requirements
-- **540P vs 720P**: Choose based on your GPU memory and quality needs
-
-### Performance Optimization
-
-- **TeaCache**: Speeds up generation (2-3x faster) with minimal quality loss
-- **Offloading**: Automatically manages GPU memory for large models
-- **Batch Processing**: Efficient handling of multiple generations
-
-### Advanced Parameters
-
-- **Guidance Scale**: Controls adherence to prompt (1.0-20.0)
-- **Shift**: Fine-tunes the generation process (1.0-20.0)
-- **Inference Steps**: Quality vs speed trade-off (10-100)
-- **Seeds**: Reproducible results with specific seed values
-
-## 🔧 Hardware Requirements
+## 🚨 System Requirements
 
 ### Minimum Requirements
-
-- GPU: 16GB VRAM (GTX 4090, RTX A4000, etc.)
-- RAM: 32GB system memory
-- Storage: 50GB free space for models
+- **GPU**: NVIDIA GPU with 8GB+ VRAM
+- **RAM**: 16GB+ system RAM
+- **Storage**: 50GB+ free space for models
+- **Python**: 3.8+
 
 ### Recommended Requirements
+- **GPU**: NVIDIA RTX 4090 or A100 with 24GB+ VRAM
+- **RAM**: 32GB+ system RAM
+- **Storage**: 100GB+ SSD storage
+- **Python**: 3.10+
 
-- GPU: 24GB+ VRAM (RTX 4090, A5000, H100)
-- RAM: 64GB+ system memory
-- Storage: 100GB+ SSD storage for optimal performance
+## 🐛 Troubleshooting
 
-### Model Memory Usage
+### Common Issues
 
-- **1.3B Models**: ~8-12GB VRAM
-- **14B Models**: ~20-24GB VRAM
-- **540P Resolution**: Lower memory usage
-- **720P Resolution**: ~30% more VRAM required
+1. **Out of Memory Errors**
+   - Enable "CPU Offload" option
+   - Reduce number of frames
+   - Use smaller models (1.3B instead of 14B)
 
-## 🚀 Usage Tips
+2. **Slow Generation**
+   - Ensure CUDA is properly installed
+   - Use CPU offload if GPU memory is limited
+   - Consider using lower resolution models
 
-### For Best Results
+3. **Import Errors**
+   - Run `python test_gradio.py` to diagnose issues
+   - Ensure all dependencies are installed
+   - Check Python version compatibility
 
-1. **Use descriptive prompts**: Include details about lighting, camera angles, actions
-2. **Enable prompt enhancement**: For automated prompt optimization
-3. **Start with shorter videos**: Test with 97 frames before generating longer content
-4. **Use appropriate resolution**: Match your hardware capabilities
+4. **Model Download Issues**
+   - Ensure stable internet connection
+   - Check Hugging Face Hub access
+   - Verify sufficient storage space
 
-### Optimizing Performance
+### Getting Help
 
-1. **Enable TeaCache**: Significant speed improvement with minimal quality loss
-2. **Use smaller models first**: Test with 1.3B before moving to 14B
-3. **Close other applications**: Free up GPU memory for better performance
-4. **Monitor GPU temperature**: Ensure adequate cooling during long generations
+If you encounter issues:
+1. Run the test script: `python test_gradio.py`
+2. Check the console output for error messages
+3. Ensure your system meets the requirements
+4. Try the setup script with `--skip-deps` if dependencies are already installed
 
-### Troubleshooting
+## 📝 Example Prompts
 
-- **Out of Memory**: Reduce resolution, frames, or use smaller model
-- **Slow Generation**: Enable TeaCache, reduce inference steps
-- **Poor Quality**: Increase inference steps, try prompt enhancement
-- **Model Loading Issues**: Check internet connection for model downloads
+### Text-to-Video Examples
+- "A graceful white swan swimming in a serene lake at dawn with mist rising from the water"
+- "Ocean waves crashing against rocky cliffs in slow motion during golden hour"
+- "A bustling city street with people walking and cars passing by, shot from above"
+- "Cherry blossoms falling gently in a peaceful Japanese garden with soft lighting"
 
-## 🌐 Public Link Sharing
+### Image-to-Video Examples
+- "The person in the image turns their head and smiles warmly"
+- "The landscape comes alive with gentle wind moving through the trees"
+- "The character in the image waves hello with a friendly expression"
+- "The scene transforms with magical sparkles and soft movement"
 
-The Gradio app automatically generates a public link (like `https://xxxxx.gradio.live`) that you can:
+## 🎬 Output
 
-- Share with others to access your interface remotely
-- Use from different devices and locations
-- Keep active for up to 72 hours per session
+Generated videos are saved in the current directory with timestamps:
+- `output_t2v_[timestamp].mp4` for Text-to-Video
+- `output_i2v_[timestamp].mp4` for Image-to-Video  
+- `output_df_[timestamp].mp4` for Diffusion Forcing
 
-**Security Note**: The public link allows anyone with the URL to access your interface. Only share with trusted users.
-
-## 📊 Model Information
-
-### Available Models
-
-| Model Type    | Size | Resolution | Performance  | Memory  |
-| ------------- | ---- | ---------- | ------------ | ------- |
-| T2V-1.3B-540P | 1.3B | 544×960    | Fast         | 8-12GB  |
-| T2V-14B-540P  | 14B  | 544×960    | Best         | 20-24GB |
-| T2V-14B-720P  | 14B  | 720×1280   | Best+HQ      | 24-28GB |
-| I2V-1.3B-540P | 1.3B | 544×960    | Fast         | 8-12GB  |
-| I2V-14B-540P  | 14B  | 544×960    | Best         | 20-24GB |
-| I2V-14B-720P  | 14B  | 720×1280   | Best+HQ      | 24-28GB |
-| DF-1.3B-540P  | 1.3B | 544×960    | Fast+Long    | 8-12GB  |
-| DF-14B-540P   | 14B  | 544×960    | Best+Long    | 20-24GB |
-| DF-14B-720P   | 14B  | 720×1280   | Best+HQ+Long | 24-28GB |
-
-## 🔗 Links
-
-- [SkyReels V2 GitHub](https://github.com/SkyworkAI/SkyReels-V2)
-- [Technical Paper](https://arxiv.org/pdf/2504.13074)
-- [HuggingFace Models](https://huggingface.co/collections/Skywork/skyreels-v2-6801b1b93df627d441d0d0d9)
-- [Official Playground](https://www.skyreels.ai/home)
-
-## 📄 License
-
-This project follows the same license as SkyReels V2. Please refer to the main repository for licensing information.
-
-## 🆘 Support
-
-For issues and questions:
-
-1. Check the troubleshooting section above
-2. Review the main SkyReels V2 documentation
-3. Open an issue on the GitHub repository
-4. Join the Discord community for real-time help
-
----
-
-**Happy Video Generating! 🎬✨**
+Enjoy creating amazing videos with SkyReels V2! 🎉
